@@ -40,6 +40,3 @@ def loss_pde(model):
     loss = torch.nn.MSELoss()(a, -_MU * v * v_norm - _g)
     return loss
 
-
-
-

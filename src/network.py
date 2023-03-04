@@ -11,12 +11,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Net(nn.Module):
     def __init__(
-        self, input_dim, output_dim, n_units=100, epochs=100, loss=nn.MSELoss(), lr=1e-3
+        self, input_dim, output_dim, pde_loss, n_units=100, epochs=100, loss=nn.MSELoss(), lr=1e-3
     ) -> None:
         super().__init__()
 
         self.epochs = epochs
         self.loss = loss
+        self.pde_loss = pde_loss
         self.lr = lr
         self.batch_size = 32
         self.n_units = n_units
@@ -53,7 +54,7 @@ class Net(nn.Module):
                 inputs, targets = batch
                 optimiser.zero_grad()
                 outputs = self.forward(inputs)
-                loss = self.loss(targets, outputs) + self.phys_loss()
+                loss = self.loss(targets, outputs) + self.phys_loss(self)
                 # print(loss)
                 loss.backward()
                 optimiser.step()
@@ -69,12 +70,3 @@ class Net(nn.Module):
             torch.from_numpy(X).to(torch.float).to(DEVICE).reshape(n_samples, -1)
         )
         return out.detach().cpu().numpy()
-
-    def phys_loss(self):
-        bound_loss = self.loss(
-            self(torch.tensor([0.0]).to(DEVICE)), torch.tensor([0.0, 0.0]).to(DEVICE)
-        )
-        bound_loss2 = self.loss(
-            self(torch.tensor([5.0]).to(DEVICE)), torch.tensor([100.0, 0.0]).to(DEVICE)
-        )
-        return bound_loss + bound_loss2 + de.loss_pde(self)
