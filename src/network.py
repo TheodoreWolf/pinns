@@ -78,6 +78,3 @@ class Net(nn.Module):
             self(torch.tensor([5.0]).to(DEVICE)), torch.tensor([100.0, 0.0]).to(DEVICE)
         )
         return bound_loss + bound_loss2 + de.loss_pde(self)
-
-    def func_loss(self):
-        fmodel, params = make_functional(model)
