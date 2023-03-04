@@ -81,4 +81,3 @@ class Net(nn.Module):
 
     def func_loss(self):
         fmodel, params = make_functional(model)
-#im stuff
