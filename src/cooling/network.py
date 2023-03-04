@@ -11,7 +11,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class Net(nn.Module):
     def __init__(
-        self, input_dim, output_dim, pde_loss, n_units=100, epochs=100, loss=nn.MSELoss(), lr=1e-3
+        self, input_dim, output_dim, pde_loss, n_units=100, epochs=100, loss=nn.MSELoss(), lr=1e-3, phys_weight=0.1
     ) -> None:
         super().__init__()
 
@@ -21,6 +21,7 @@ class Net(nn.Module):
         self.lr = lr
         self.batch_size = 32
         self.n_units = n_units
+        self.phys_weight = phys_weight
 
         self.layers = nn.Sequential(
             nn.Linear(input_dim, self.n_units),
@@ -54,8 +55,9 @@ class Net(nn.Module):
                 inputs, targets = batch
                 optimiser.zero_grad()
                 outputs = self.forward(inputs)
-                loss = self.loss(targets, outputs) + self.phys_loss(self)
-                # print(loss)
+                loss = self.loss(targets, outputs)
+                if self.pde_loss:
+                    loss += self.phys_weight * self.pde_loss(self)
                 loss.backward()
                 optimiser.step()
                 losses.append(loss.item())
