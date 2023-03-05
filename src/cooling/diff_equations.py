@@ -17,13 +17,6 @@ def grad(outputs, inputs):
     )
 
 
-def loss_pde(model):
-
-    t = torch.linspace(0, 6, steps=100, requires_grad=True).to(DEVICE)[:, None]
-
-    return loss
-
-
 def cooling_law(time, Tenv, T0, R):
     T = Tenv + (T0 - Tenv) * np.exp(-R * time)
     return T

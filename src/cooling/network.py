@@ -2,16 +2,22 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as thdat
-from functorch import make_functional
-
-import diff_equations as de
+import matplotlib.pyplot as plt
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class Net(nn.Module):
     def __init__(
-        self, input_dim, output_dim, pde_loss, n_units=100, epochs=100, loss=nn.MSELoss(), lr=1e-3, phys_weight=0.1
+        self,
+        input_dim,
+        output_dim,
+        pde_loss,
+        n_units=100,
+        epochs=100,
+        loss=nn.MSELoss(),
+        lr=1e-3,
+        phys_weight=0.1,
     ) -> None:
         super().__init__()
 
