@@ -1,5 +1,4 @@
 import torch
-from functorch import make_functional, grad, vmap
 import numpy as np
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")

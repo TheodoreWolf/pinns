@@ -2,9 +2,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.utils.data as thdat
-import matplotlib.pyplot as plt
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+def np_to_th(x):
+    n_samples = len(x)
+    return torch.from_numpy(x).to(torch.float).to(DEVICE).reshape(n_samples, -1)
 
 
 class Net(nn.Module):
