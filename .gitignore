@@ -1,6 +1,8 @@
 .ipynb_checkpoints
 .vscode
 plots
+poetry.lock
+pyproject.toml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
