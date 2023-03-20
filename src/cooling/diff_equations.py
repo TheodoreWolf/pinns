@@ -1,8 +1,6 @@
 import torch
 import numpy as np
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 def grad(outputs, inputs):
     """compute the derivative of outputs associated with inputs.
