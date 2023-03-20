@@ -16,11 +16,11 @@ class Net(nn.Module):
         self,
         input_dim,
         output_dim,
-        loss2,
         n_units=100,
-        epochs=100,
+        epochs=1000,
         loss=nn.MSELoss(),
         lr=1e-3,
+        loss2=None,
         loss2_weight=0.1,
     ) -> None:
         super().__init__()
@@ -28,15 +28,19 @@ class Net(nn.Module):
         self.epochs = epochs
         self.loss = loss
         self.loss2 = loss2
+        self.loss2_weight = loss2_weight
         self.lr = lr
         self.n_units = n_units
-        self.loss2_weight = loss2_weight
 
         self.layers = nn.Sequential(
             nn.Linear(input_dim, self.n_units),
-            nn.GELU(),
+            nn.ReLU(),
             nn.Linear(self.n_units, self.n_units),
-            nn.GELU(),
+            nn.ReLU(),
+            nn.Linear(self.n_units, self.n_units),
+            nn.ReLU(),
+            nn.Linear(self.n_units, self.n_units),
+            nn.ReLU(),
         )
         self.out = nn.Linear(self.n_units, output_dim)
 
@@ -47,9 +51,8 @@ class Net(nn.Module):
         return out
 
     def fit(self, X, y):
-        n_samples = len(X)
-        Xt = torch.from_numpy(X).to(torch.float).to(DEVICE).reshape(n_samples, -1)
-        yt = torch.from_numpy(y).to(torch.float).to(DEVICE).reshape(n_samples, -1)
+        Xt = np_to_th(X)
+        yt = np_to_th(y)
 
         optimiser = optim.Adam(self.parameters(), lr=self.lr)
         self.train()
@@ -59,7 +62,7 @@ class Net(nn.Module):
             outputs = self.forward(Xt)
             loss = self.loss(yt, outputs)
             if self.loss2:
-                loss += self.loss2_weight * self.loss2(self)
+                loss += self.loss2_weight + self.loss2_weight * self.loss2(self)
             loss.backward()
             optimiser.step()
             losses.append(loss.item())
@@ -69,8 +72,24 @@ class Net(nn.Module):
 
     def predict(self, X):
         self.eval()
-        n_samples = len(X)
-        out = self.forward(
-            torch.from_numpy(X).to(torch.float).to(DEVICE).reshape(n_samples, -1)
-        )
+        out = self.forward(np_to_th(X))
         return out.detach().cpu().numpy()
+
+
+class NetDiscovery(Net):
+    def __init__(
+        self,
+        input_dim,
+        output_dim,
+        n_units=100,
+        epochs=1000,
+        loss=nn.MSELoss(),
+        lr=0.001,
+        loss2=None,
+        loss2_weight=0.1,
+    ) -> None:
+        super().__init__(
+            input_dim, output_dim, n_units, epochs, loss, lr, loss2, loss2_weight
+        )
+
+        self.r = nn.Parameter(data=torch.tensor([0.]))
