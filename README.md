@@ -1,7 +1,7 @@
 # Physics-Informed Neural Networks with Pytorch
 Playing around with Phyiscs-Informed Neural Networks
 
-requirements
+requirements are 
 torch
 scikit-learn
 numpy
