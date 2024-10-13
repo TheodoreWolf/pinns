@@ -62,7 +62,7 @@ class Net(nn.Module):
             outputs = self.forward(Xt)
             loss = self.loss(yt, outputs)
             if self.loss2:
-                loss += self.loss2_weight + self.loss2_weight * self.loss2(self)
+                loss += self.loss2_weight * self.loss2(self)
             loss.backward()
             optimiser.step()
             losses.append(loss.item())
