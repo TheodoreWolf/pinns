@@ -15,7 +15,6 @@ The learned solutions not only fit the data but also respect the underlying phys
 
 ```
 pinns/
-├── notebooks/        # Jupyter notebooks with step-by-step tutorials
 ├── src/              # Core implementation: models, training loops, etc.
 ├── LICENSE
 └── README.md         # You're here!
