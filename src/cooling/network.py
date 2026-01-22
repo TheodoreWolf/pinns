@@ -16,12 +16,14 @@ class Net(nn.Module):
         self,
         input_dim,
         output_dim,
-        n_units=100,
+        n_units=30,
         epochs=1000,
         loss=nn.MSELoss(),
         lr=1e-3,
         loss2=None,
         loss2_weight=0.1,
+        Tmax = 1000,
+        T0 = 100,
     ) -> None:
         super().__init__()
 
@@ -32,21 +34,27 @@ class Net(nn.Module):
         self.lr = lr
         self.n_units = n_units
 
+        # For scaling input and output of NN model
+        self.Tmax = Tmax
+        self.T0 = T0
+
+        # Multiple hidden layers is massive overkill here
         self.layers = nn.Sequential(
             nn.Linear(input_dim, self.n_units),
-            nn.ReLU(),
+            nn.GELU(),
             nn.Linear(self.n_units, self.n_units),
-            nn.ReLU(),
-            nn.Linear(self.n_units, self.n_units),
-            nn.ReLU(),
-            nn.Linear(self.n_units, self.n_units),
-            nn.ReLU(),
+            nn.GELU(),
+            #nn.Linear(self.n_units, self.n_units),
+            #nn.Tanh(),
+            #nn.Linear(self.n_units, self.n_units),
+            #nn.Tanh(),
         )
         self.out = nn.Linear(self.n_units, output_dim)
 
     def forward(self, x):
-        h = self.layers(x)
-        out = self.out(h)
+        # Scale input and output so of order unity for better training
+        h = self.layers(x/self.Tmax)
+        out = self.T0*self.out(h)
 
         return out
 
@@ -54,20 +62,42 @@ class Net(nn.Module):
         Xt = np_to_th(X)
         yt = np_to_th(y)
 
-        optimiser = optim.Adam(self.parameters(), lr=self.lr)
+        # Setup BFGS optimiser rather than Adam since we're doing full-batch
+        optimiser = optim.LBFGS(self.parameters(), lr=self.lr, line_search_fn='strong_wolfe')
+        def closure():
+            # zero gradients to compute fresh grads for this closure
+            try:
+                self.optimiser.zero_grad()
+            except Exception:
+                pass
+            self.zero_grad()
+            # compute loss
+            loss = loss_fn(yt, self(Xt))
+            # backward to populate `.grad`
+            loss.backward()
+
+            return loss
+
+        # Define loss function
+        def loss_fn(yt, outputs):
+
+            if (self.loss2 is None):
+                return self.loss(yt, outputs)
+            else:
+                #print("loss : ", self.loss(yt, outputs).item(), " loss2 : ", self.loss2(self).item())
+                return self.loss(yt, outputs) + self.loss2_weight * self.loss2(self)
+
+
         self.train()
         losses = []
         for ep in range(self.epochs):
             optimiser.zero_grad()
-            outputs = self.forward(Xt)
-            loss = self.loss(yt, outputs)
-            if self.loss2:
-                loss += self.loss2_weight * self.loss2(self)
-            loss.backward()
-            optimiser.step()
+            #outputs = self.forward(Xt)
+            loss = optimiser.step(closure)
             losses.append(loss.item())
             if ep % int(self.epochs / 10) == 0:
                 print(f"Epoch {ep}/{self.epochs}, loss: {losses[-1]:.2f}")
+
         return losses
 
     def predict(self, X):
